@@ -62,11 +62,12 @@ app.post('/continue-interview', async (req, res) => {
         let specificInstruction = ''; 
         let logCategory = 'Q1: Self Introduction'; 
         let logSource = ''; 
-        let scoreChange = 0; 
+        let scoreChange = 0; // Initialize score change for current turn
 
         // --- 1. DETERMINE SCORING & INSTRUCTION (Runs before transition check) ---
-        if (questionCount > 0 && questionCount <= maxQuestions) {
-            // Added check to ensure array index exists before access
+        // Scoring only applies if we have a full Q&A pair and the question count is 2 or higher (Q1 answer received)
+        if (questionCount > 0 && conversationHistory.length >= 2) {
+            
             const lastUserAnswer = conversationHistory[conversationHistory.length - 1]?.content || 'No response.';
             const lastAiQuestion = conversationHistory[conversationHistory.length - 2]?.content || '';
 
@@ -115,7 +116,6 @@ app.post('/continue-interview', async (req, res) => {
                 specificInstruction = `Question 3: Based ONLY on the user's previous answer about their project, ask one technical follow-up question regarding a mistake, a challenge they faced, or a technical choice they made in that project. Do not ask a new topic.`;
             } else if (questionCount >= 3 && questionCount <= 5) {
                 logCategory = 'Q4-6: Core Technical Skills';
-                // FIX: Added safe access to skills (first skill or 'general')
                 const primarySkill = skills.split(',')[0].trim() || 'general topics';
                 logSource = `Based on Core Skills (${skills}) & Course (${course})`;
                 specificInstruction = `Question 4-6 (Technical Focus): Shift the focus to core foundational knowledge. Ask a technical question based on the key skills (DSA, OOPS, primary programming language). Ensure the question is concise and requires a foundational explanation.`;
@@ -171,7 +171,7 @@ app.post('/continue-interview', async (req, res) => {
             logStatus = `FALLBACK_TRIGGERED (All ${MAX_ATTEMPTS} attempts failed)`;
             console.warn(`All ${MAX_ATTEMPTS} attempts failed at Q${questionCount + 1}. Using final dynamic fallback.`);
             
-            const primarySkill = skills.split(',')[0].trim() || 'General Topics'; // Added fallback for primary skill
+            const primarySkill = skills.split(',')[0].trim() || 'General Topics'; 
             nextQuestion = `I see. Let's cover some fundamentals. Can you explain the core concepts of ${course} using your primary skill, ${primarySkill}?`;
             logSource = `FALLBACK: Used Course/Skill Data`; 
         } else if (attempt > 1) {
@@ -180,8 +180,9 @@ app.post('/continue-interview', async (req, res) => {
 
         // --- 5. TERMINAL LOGGING ---
         console.log('--- AI Question Generation Log ---');
-        if (questionCount > 0 && questionCount <= maxQuestions) {
-            console.log(`[Q${questionCount}] ANSWER SCORE: +${scoreChange} / ${MAX_TOTAL_SCORE_EACH_TURN}`);
+        // Only log score if an answer was just received AND it was a scorable turn (Q2 onwards)
+        if (questionCount > 0 && conversationHistory.length >= 2) { 
+             console.log(`[Q${questionCount}] ANSWER SCORE: +${scoreChange} / ${MAX_TOTAL_SCORE_EACH_TURN}`);
         }
         console.log(`[Q${questionCount + 1}] Category: ${logCategory}`);
         console.log(`[Q${questionCount + 1}] Source: ${logSource}`);
