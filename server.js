@@ -96,8 +96,10 @@ app.post('/continue-interview', async (req, res) => {
 
         // --- 2. CHECK FOR ENDING & NEXT QUESTION LOGIC ---
         if (questionCount >= maxQuestions) {
+            // FIX: Added strict instruction to prevent the AI from answering itself.
             systemPrompt = `The interview has reached its question limit. Provide ONLY the concluding remark: "Thank you for your time. We'll be in touch." DO NOT provide an answer or any further text.`;
-            interviewEnded = true;
+            // NOTE: interviewEnded is set to true to correctly tell the client to stop the loop.
+            interviewEnded = true; 
             logCategory = 'Interview Conclusion';
             logSource = 'End of Question Count Limit';
         } else {
