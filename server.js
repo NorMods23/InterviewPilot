@@ -3,8 +3,7 @@ const OpenAI = require('openai');
 const cors = require('cors');
 
 // --- CONFIGURATION ---
-// FIX: Key is now read from Render's Environment Variables (process.env)
-const OPENROUTER_KEY = process.env.OPENROUTER_KEY || "TEMPORARY_LOCAL_PLACEHOLDER_KEY"; 
+const OPENROUTER_KEY = process.env.OPENROUTER_KEY; 
 const PORT = 3000;
 const MAX_QUESTIONS = { '1': 4, '2': 10, '3': 12, '4': 15 };
 const POINTS_PER_QUESTION = 20; 
@@ -12,6 +11,11 @@ const POINTS_PER_CONFIDENCE = 5;
 const MAX_TOTAL_SCORE_EACH_TURN = POINTS_PER_QUESTION + POINTS_PER_CONFIDENCE; // 25
 
 // --- INITIALIZATION ---
+if (!OPENROUTER_KEY) {
+    console.error("FATAL ERROR: OPENROUTER_KEY is not set in environment variables. Server cannot start.");
+    process.exit(1);
+}
+
 const app = express();
 app.use(cors());
 app.use(express.static('public'));
@@ -21,8 +25,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const openai = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
-    // Use the variable read from process.env
-    apiKey: OPENROUTER_KEY, 
+    apiKey: OPENROUTER_KEY,
     defaultHeaders: { "HTTP-Referer": "http://localhost:3000", "X-Title": "AI Interviewer" },
 });
 
@@ -63,6 +66,7 @@ app.post('/continue-interview', async (req, res) => {
 
         // --- 1. DETERMINE SCORING & INSTRUCTION (Runs before transition check) ---
         if (questionCount > 0 && questionCount <= maxQuestions) {
+            // Added check to ensure array index exists before access
             const lastUserAnswer = conversationHistory[conversationHistory.length - 1]?.content || 'No response.';
             const lastAiQuestion = conversationHistory[conversationHistory.length - 2]?.content || '';
 
@@ -96,10 +100,11 @@ app.post('/continue-interview', async (req, res) => {
             logCategory = 'Interview Conclusion';
             logSource = 'End of Question Count Limit';
         } else {
-            // --- NEXT QUESTION LOGIC ---
+            // --- NEXT QUESTION LOGIC (Same as before) ---
             
             let baseContext = `You are an expert interviewer. The difficulty is level ${level}. The user is a student in ${course}. Their resume states: "${resumeText}". The user has requested to focus on: ${focusTopics}.`;
             
+            // Set instruction and log category based on question count
             if (questionCount === 1) {
                 logCategory = 'Q2: Project Explanation';
                 logSource = 'Based on Resume/Profile';
@@ -110,6 +115,8 @@ app.post('/continue-interview', async (req, res) => {
                 specificInstruction = `Question 3: Based ONLY on the user's previous answer about their project, ask one technical follow-up question regarding a mistake, a challenge they faced, or a technical choice they made in that project. Do not ask a new topic.`;
             } else if (questionCount >= 3 && questionCount <= 5) {
                 logCategory = 'Q4-6: Core Technical Skills';
+                // FIX: Added safe access to skills (first skill or 'general')
+                const primarySkill = skills.split(',')[0].trim() || 'general topics';
                 logSource = `Based on Core Skills (${skills}) & Course (${course})`;
                 specificInstruction = `Question 4-6 (Technical Focus): Shift the focus to core foundational knowledge. Ask a technical question based on the key skills (DSA, OOPS, primary programming language). Ensure the question is concise and requires a foundational explanation.`;
             } else if (questionCount >= 6 && questionCount <= 7) {
@@ -164,7 +171,7 @@ app.post('/continue-interview', async (req, res) => {
             logStatus = `FALLBACK_TRIGGERED (All ${MAX_ATTEMPTS} attempts failed)`;
             console.warn(`All ${MAX_ATTEMPTS} attempts failed at Q${questionCount + 1}. Using final dynamic fallback.`);
             
-            const primarySkill = skills.split(',')[0].trim();
+            const primarySkill = skills.split(',')[0].trim() || 'General Topics'; // Added fallback for primary skill
             nextQuestion = `I see. Let's cover some fundamentals. Can you explain the core concepts of ${course} using your primary skill, ${primarySkill}?`;
             logSource = `FALLBACK: Used Course/Skill Data`; 
         } else if (attempt > 1) {
