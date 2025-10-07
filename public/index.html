@@ -1,1 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interviewer - Your Path to Placement</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+    </div>
 
+    <div class="container">
+        <!-- Main Landing Page Section -->
+        <section id="landing-page">
+            <header>
+                <h1 class="main-title">AI Interviewer</h1>
+                <nav>
+                    <a href="#about-us">About</a>
+                    <a href="#features-section">Features</a>
+                    <a href="#team-section">Team</a>
+                </nav>
+            </header>
+            <main>
+                <div id="hero">
+                    <h2 class="tagline">Practice Perfection. Land Your Dream Job.</h2>
+                    <p class="description">Engage in realistic, AI-powered mock interviews tailored to your skills and get instant, actionable feedback to ace your next real-world interview.</p>
+                    <button id="start-btn" onclick="startFormFlow()">Begin Your Interview</button>
+                </div>
+
+                <div id="about-us" class="info-section">
+                    <h3>About Us: The Studgram Advantage</h3>
+                    <p>We believe preparation is the key to success. Our platform uses advanced AI (Large Language Models) to simulate a high-pressure interview environment, focusing on real-time speech-to-text, tone analysis, and deep technical evaluation based on your resume and branch of study.</p>
+                </div>
+
+                <div id="features-section" class="info-section">
+                    <h3>Key Features</h3>
+                    <ul>
+                        <li><strong>Resume-Aware Questioning:</strong> AI frames questions based on your uploaded resume and stated skills.</li>
+                        <li><strong>Adaptive Difficulty:</strong> Choose your level (Beginner to Expert) to control question complexity.</li>
+                        <li><strong>Voice Analysis:</strong> Get feedback on your pace, tone, and confidence level.</li>
+                        <li><strong>Detailed Report:</strong> A comprehensive, downloadable report covering strengths, weaknesses, and a selection percentage.</li>
+                    </ul>
+                </div>
+                
+                <div id="competition-section" class="info-section">
+                    <h3>How We Outshine Competitors</h3>
+                    <p>Unlike basic mock interview tools, we utilize a full-stack architecture that incorporates advanced PDF parsing, personalized question branching (mixing general, skill-specific, and requested topics), and an integrated voice interface, providing a truly immersive and relevant experience.</p>
+                </div>
+
+                <div id="team-section" class="info-section team-grid">
+                    <h3>Meet Our Development Team (B.Tech 4th Year)</h3>
+                    <div class="team-member">
+                        <h4>Mr. Saikiran Maddirala</h4>
+                        <p>Full Stack Developer</p>
+                    </div>
+                    <div class="team-member">
+                        <h4>Mr. Bhanu Prakash</h4>
+                        <p>AI/ML Engineer & Prompt Specialist</p>
+                    </div >
+                    <div class="team-member">
+                        <h4>Mr. Kanneboina Narender</h4>
+                        <p>UI/UX Specialist</p>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- User Form Section -->
+        <section id="user-form-section" class="hidden">
+            <h2>Your Interview Profile</h2>
+            <form id="user-form">
+                <div class="form-group"><label for="course">Your Course</label><input type="text" id="course" name="course" placeholder="e.g., B.Tech CSE" required></div>
+                <div class="form-group"><label for="year">Year of Study</label><select id="year" name="year" required><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option></select></div>
+                <div class="form-group"><label for="skills">Key Skills</label><textarea id="skills" name="skills" rows="3" placeholder="e.g., Java, Python, SQL" required></textarea></div>
+                <div class="form-group"><label for="level">Interview Level</label><select id="level" name="level" required><option value="1">Beginner</option><option value="2">Intermediate</option><option value="3">Advanced</option><option value="4">Expert</option></select></div>
+                <div class="form-group full-width">
+                    <label for="focusTopics">Topics to Focus On (Optional)</label>
+                    <textarea id="focusTopics" name="focusTopics" rows="2" placeholder="e.g., Data Structures, OOP in Java (20-30% of questions)"></textarea>
+                </div>
+                
+                <!-- FILE INPUT IS REMOVED -->
+                <input type="hidden" id="resume" name="resume" value="placeholder"/>
+
+                <!-- MANUAL INPUT AREA -->
+                <div class="form-group full-width" id="extracted-content-group">
+                    <label for="extractedContent" style="color:#007bff;">Paste Resume Text (CRITICAL STEP)</label>
+                    <p style="font-size:0.85rem; color:#a0a0a0; margin-bottom:0.5rem; text-align:left;">
+                        **Action:** Please use **<a href="https://www.onlineocr.net/" target="_blank" style="color:#ffcc00; text-decoration:underline;">OnlineOCR.net</a>** to upload your resume, convert it to text, and paste the raw output below.
+                    </p>
+                    <textarea id="extractedContent" rows="5" placeholder="Paste the extracted text content of your resume here. Minimum 50 characters required for personalized questions."></textarea>
+                </div>
+                
+                <button type="submit" id="submit-btn">Start Interview</button>
+            </form>
+        </section>
+
+        <!-- Interview Section -->
+        <section id="interview-section" class="hidden">
+            <div id="ai-container"><img src="https://i.ibb.co/Q7BfBSnC/f85f4-ai-generated.webp" alt="AI Avatar"><div id="status-text">Initializing...</div></div>
+            <div id="question-container"><p id="question-text">Please wait...</p></div>
+        </section>
+
+        <!-- Result Generation Section -->
+        <section id="generating-results-section" class="hidden">
+            <div class="loader"></div>
+            <h2>Generating Your Performance Report...</h2>
+            <p>The AI is analyzing your answers, tone, and confidence. This may take a moment.</p>
+        </section>
+
+        <!-- Final Results Section -->
+        <section id="final-results-section" class="hidden">
+            <h2>Interview Complete</h2>
+            <div id="score-container">
+                <div class="score-circle-wrapper">
+                    <canvas id="score-canvas" width="200" height="200"></canvas>
+                    <div id="score-text" class="score-text">--%</div>
+                </div>
+            </div>
+            <p class="score-caption">Your final score out of 100 based on knowledge, confidence, and communication.</p>
+            
+            <!-- Hidden container for report text, used only for download -->
+            <div id="results-content" style="display: none;"></div>
+            
+            <button id="download-results-btn">Download Detailed Report (.txt)</button>
+            <p class="return-link"><a href="javascript:window.location.reload();">Start a new interview</a></p>
+        </section>
+    </div>
+
+    <!-- GSAP Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
