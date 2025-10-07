@@ -5,18 +5,21 @@ const interviewSection = document.getElementById("interview-section");
 const generatingResultsSection = document.getElementById("generating-results-section");
 const finalResultsSection = document.getElementById("final-results-section");
 
-// Used by all functions
+// Global references for display elements (FIXED SCOPE)
 const questionText = document.getElementById("question-text");
 const statusText = document.getElementById("status-text");
+const resultsContent = document.getElementById("results-content");
+const scoreText = document.getElementById("score-text");
+const scoreCanvas = document.getElementById("score-canvas");
+const ctx = scoreCanvas ? scoreCanvas.getContext('2d') : null; // Initialize context safely
 
 // Global state variables
 let conversationHistory = [], userData = {}, questionCount = 0;
 let finalReport = "";
 
 // --- API Configuration ---
-// DEFINITIVE RENDER URL FOR ALL API CALLS - MOVED OUTSIDE DOMContentLoaded for global access
+// DEFINITIVE RENDER URL FOR ALL API CALLS (Update this ONLY if your Render URL changes)
 const BASE_API_URL = "https://interviewpilot-tuqn.onrender.com";
-
 
 // --- Core Function: Page Transition ---
 function showSection(sectionToShow) {
@@ -42,14 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Element References (re-defined locally for clarity) ---
     const userForm = document.getElementById("user-form");
     const downloadResultsBtn = document.getElementById("download-results-btn");
-    const scoreText = document.getElementById("score-text");
-    const scoreCanvas = document.getElementById("score-canvas");
-    const ctx = scoreCanvas.getContext('2d');
-    
-    // NEW REFERENCES
     const extractedContentTextarea = document.getElementById('extractedContent');
-
-    
 
 
     // --- Core Functions (speak, listen, drawScore, etc.) ---
@@ -151,8 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleInterviewTurn(dataForBackend, endpoint) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); 
-            // FIXED URL CALL
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for questions
+            // We use BASE_API_URL here
             const response = await fetch(`${BASE_API_URL}${endpoint}`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dataForBackend), signal: controller.signal
