@@ -13,6 +13,11 @@ const statusText = document.getElementById("status-text");
 let conversationHistory = [], userData = {}, questionCount = 0;
 let finalReport = "";
 
+// --- API Configuration ---
+// DEFINITIVE RENDER URL FOR ALL API CALLS - MOVED OUTSIDE DOMContentLoaded for global access
+const BASE_API_URL = "https://interviewpilot-tuqn.onrender.com";
+
+
 // --- Core Function: Page Transition ---
 function showSection(sectionToShow) {
     [landingPage, formSection, interviewSection, generatingResultsSection, finalResultsSection].forEach(section => {
@@ -44,9 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // NEW REFERENCES
     const extractedContentTextarea = document.getElementById('extractedContent');
 
-    // --- API Configuration ---
-    // DEFINITIVE RENDER URL FOR ALL API CALLS
-    const BASE_API_URL = "https://interviewpilot-tuqn.onrender.com";
+    
 
 
     // --- Core Functions (speak, listen, drawScore, etc.) ---
@@ -290,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const userAnswer = await listen();
             
             conversationHistory.push({ role: 'user', content: userAnswer });
-            questionCount=1; 
+            questionCount=1; // Start counting from Q1 answer
 
             handleInterviewTurn({ conversationHistory, ...userData, questionCount }, '/continue-interview');
 
