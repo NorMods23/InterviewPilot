@@ -3,7 +3,7 @@ const OpenAI = require('openai');
 const cors = require('cors');
 
 // --- CONFIGURATION ---
-const OPENROUTER_KEY = "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";
+const OPENROUTER_KEY = "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";
 const PORT = 3000;
 const MAX_QUESTIONS = { '1': 4, '2': 10, '3': 12, '4': 15 };
 const POINTS_PER_QUESTION = 20; 
@@ -260,3 +260,4 @@ SELECTION PERCENTAGE: [${finalScoreSafe}%]
 app.listen(PORT, () => {
     console.log(`Server is running successfully on http://localhost:${PORT}`);
 });
+
