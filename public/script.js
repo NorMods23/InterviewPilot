@@ -1,18 +1,13 @@
-// --- Global Element Definitions (Accessible by all functions) ---
+// --- Global Element Definitions ---
 const landingPage = document.getElementById("landing-page");
 const formSection = document.getElementById("user-form-section");
 const interviewSection = document.getElementById("interview-section");
 const generatingResultsSection = document.getElementById("generating-results-section");
 const finalResultsSection = document.getElementById("final-results-section");
 
+// Used by all functions
 const questionText = document.getElementById("question-text");
 const statusText = document.getElementById("status-text");
-
-// Global references for display elements
-const resultsContent = document.getElementById("results-content");
-const scoreText = document.getElementById("score-text");
-const scoreCanvas = document.getElementById("score-canvas");
-// Context is only available after DOM is loaded, so we declare it inside DOMContentLoaded
 
 // Global state variables
 let conversationHistory = [], userData = {}, questionCount = 0;
@@ -39,14 +34,15 @@ function startFormFlow() {
 // --- ALL OTHER LOGIC IS WRAPPED IN DOMContentLoaded for stability ---
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Local Element References ---
+    // --- Element References (re-defined locally for clarity) ---
     const userForm = document.getElementById("user-form");
     const downloadResultsBtn = document.getElementById("download-results-btn");
-    const extractedContentTextarea = document.getElementById('extractedContent');
+    const scoreText = document.getElementById("score-text");
+    const scoreCanvas = document.getElementById("score-canvas");
+    const ctx = scoreCanvas.getContext('2d');
     
-    // Initialize Canvas context here where the element is guaranteed to exist
-    const ctx = scoreCanvas ? scoreCanvas.getContext('2d') : null; 
-
+    // NEW REFERENCES
+    const extractedContentTextarea = document.getElementById('extractedContent');
 
     // --- Core Functions (speak, listen, drawScore, etc.) ---
     
@@ -148,7 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for questions
-            const response = await fetch(`http://localhost:3000${endpoint}`, {
+            // --- URL FIX APPLIED HERE ---
+            const response = await fetch(`https://interviewpilot-tuqn.onrender.com${endpoint}`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dataForBackend), signal: controller.signal
             });
@@ -161,8 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- SCORE AGGREGATION & LOGGING (Real-Time) ---
             if (questionCount > 0) {
-                // IMPORTANT: We need to define currentScore outside this block to be global/accessible
-                let currentScore = conversationHistory.reduce((sum, turn) => sum + (turn.scoreDelta || 0), 0);
+                let currentScore = userData.currentScore || 0;
                 
                 currentScore += scoreDelta;
                 
@@ -172,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 console.log(`[CLIENT-SIDE SCORE UPDATE] Question ${questionCount} Score: +${scoreDelta} (Total: ${currentScore})`);
-                userData.currentScore = currentScore; // Store current score in userData for final report submission
+                userData.currentScore = currentScore;
             }
             // --- END SCORE AGGREGATION ---
 
@@ -203,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function generateFinalReport() {
         showSection(generatingResultsSection);
         
-        // Calculate the final score here, ensuring it is correct
         const finalScore = userData.currentScore || 0;
 
         try {
@@ -211,10 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // 60s timeout for final heavy analysis
             const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
-            const response = await fetch('http://localhost:3000/generate-feedback', {
+            // --- URL FIX APPLIED HERE ---
+            const response = await fetch('https://interviewpilot-tuqn.onrender.com/generate-feedback', {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
-                // Send the FINAL calculated score for the server to use in the report text
                 body: JSON.stringify({ conversationHistory, resumeText: userData.resumeText, skills: userData.skills, course: userData.course, finalScore: finalScore }),
                 signal: controller.signal
             });
@@ -227,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Display the final score
             drawScore(finalScore);
-            resultsContent.innerText = finalReport; // Store for download
+            resultsContent.innerText = finalReport; 
             showSection(finalResultsSection);
 
         } catch (error) {
@@ -268,7 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await fetch("http://localhost:3000/start-interview", { 
+            // --- URL FIX APPLIED HERE ---
+            const response = await fetch("https://interviewpilot-tuqn.onrender.com/start-interview", { 
                 method: "POST", 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(interviewPayload)
@@ -289,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const userAnswer = await listen();
             
             conversationHistory.push({ role: 'user', content: userAnswer });
-            questionCount=1; 
+            questionCount=1; // Start counting from Q1 answer
 
             // Start Q2 logic (scoring starts after the Q1 answer is received)
             handleInterviewTurn({ conversationHistory, ...userData, questionCount }, '/continue-interview');
@@ -320,4 +316,4 @@ document.addEventListener('DOMContentLoaded', () => {
             ease: "power3.out"
         });
     }
-}); // End DOMContentLoaded
+});
