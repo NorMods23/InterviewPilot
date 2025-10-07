@@ -44,6 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // NEW REFERENCES
     const extractedContentTextarea = document.getElementById('extractedContent');
 
+    // --- API Configuration ---
+    // DEFINITIVE RENDER URL FOR ALL API CALLS
+    const BASE_API_URL = "https://interviewpilot-tuqn.onrender.com";
+
+
     // --- Core Functions (speak, listen, drawScore, etc.) ---
     
     function speak(text) {
@@ -114,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawScore(score) {
-        if (!ctx) return; // Exit if context isn't available
+        if (!scoreCanvas || !ctx) return; 
 
         const size = 200;
         const radius = size / 2 - 10;
@@ -143,9 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleInterviewTurn(dataForBackend, endpoint) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for questions
-            // --- URL FIX APPLIED HERE ---
-            const response = await fetch(`https://interviewpilot-tuqn.onrender.com${endpoint}`, {
+            const timeoutId = setTimeout(() => controller.abort(), 30000); 
+            // FIXED URL CALL
+            const response = await fetch(`${BASE_API_URL}${endpoint}`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dataForBackend), signal: controller.signal
             });
@@ -206,8 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 60s timeout for final heavy analysis
             const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
-            // --- URL FIX APPLIED HERE ---
-            const response = await fetch('https://interviewpilot-tuqn.onrender.com/generate-feedback', {
+            // FIXED URL CALL
+            const response = await fetch(`${BASE_API_URL}/generate-feedback`, {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ conversationHistory, resumeText: userData.resumeText, skills: userData.skills, course: userData.course, finalScore: finalScore }),
@@ -263,8 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            // --- URL FIX APPLIED HERE ---
-            const response = await fetch("https://interviewpilot-tuqn.onrender.com/start-interview", { 
+            // FIXED URL CALL
+            const response = await fetch(`${BASE_API_URL}/start-interview`, { 
                 method: "POST", 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(interviewPayload)
@@ -285,9 +290,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const userAnswer = await listen();
             
             conversationHistory.push({ role: 'user', content: userAnswer });
-            questionCount=1; // Start counting from Q1 answer
+            questionCount=1; 
 
-            // Start Q2 logic (scoring starts after the Q1 answer is received)
             handleInterviewTurn({ conversationHistory, ...userData, questionCount }, '/continue-interview');
 
         } catch (error) {
