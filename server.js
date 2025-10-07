@@ -3,7 +3,8 @@ const OpenAI = require('openai');
 const cors = require('cors');
 
 // --- CONFIGURATION ---
-const OPENROUTER_KEY = "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";
+// FIX: Key is now read from Render's Environment Variables (process.env)
+const OPENROUTER_KEY = process.env.OPENROUTER_KEY || "TEMPORARY_LOCAL_PLACEHOLDER_KEY"; 
 const PORT = 3000;
 const MAX_QUESTIONS = { '1': 4, '2': 10, '3': 12, '4': 15 };
 const POINTS_PER_QUESTION = 20; 
@@ -20,7 +21,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const openai = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
-    apiKey: OPENROUTER_KEY,
+    // Use the variable read from process.env
+    apiKey: OPENROUTER_KEY, 
     defaultHeaders: { "HTTP-Referer": "http://localhost:3000", "X-Title": "AI Interviewer" },
 });
 
@@ -82,7 +84,7 @@ app.post('/continue-interview', async (req, res) => {
                 );
             } catch (e) {
                 console.error("Scoring API failed:", e.message);
-                scoreChange = 0;
+                scoreChange = 0; 
             }
         }
 
@@ -94,7 +96,7 @@ app.post('/continue-interview', async (req, res) => {
             logCategory = 'Interview Conclusion';
             logSource = 'End of Question Count Limit';
         } else {
-            // --- NEXT QUESTION LOGIC (Same as before) ---
+            // --- NEXT QUESTION LOGIC ---
             
             let baseContext = `You are an expert interviewer. The difficulty is level ${level}. The user is a student in ${course}. Their resume states: "${resumeText}". The user has requested to focus on: ${focusTopics}.`;
             
@@ -124,7 +126,6 @@ app.post('/continue-interview', async (req, res) => {
                  logSource += ` + Focus Topics (${focusTopics})`;
             }
 
-            // --- FIX: Added instruction to forbid transitional/multiple sentences ---
             systemPrompt = `${baseContext} ${specificInstruction} **CRITICAL: You must NEVER repeat a question previously asked in this conversation. DO NOT loiter or include transition phrases like 'Great, I see...' or 'That's interesting.' You MUST return ONLY the text of a single, concise question (under 30 words) on a SINGLE LINE. NEVER return an empty string or multiline text.**
             - Do not provide answers or explanations.
             - If an answer is clearly wrong, you may ask a follow-up specifically about that mistake before moving on, but this is rare.
@@ -195,7 +196,7 @@ app.post('/continue-interview', async (req, res) => {
 });
 
 
-// --- API ENDPOINT FOR FINAL FEEDBACK GENERATION (FAST RESPONSE) ---
+// --- API ENDPOINT FOR FINAL FEEDBACK GENERATION (STABILITY FIX) ---
 app.post('/generate-feedback', async (req, res) => {
     let feedbackText = '';
     const { conversationHistory, resumeText, skills, course, finalScore } = req.body; 
@@ -204,18 +205,18 @@ app.post('/generate-feedback', async (req, res) => {
         // Optimization: Keep prompt extremely simple to reduce timeout chance
         const userHistory = conversationHistory
             .filter(turn => turn.role === 'user')
-            .slice(-4) // Limit history for analysis
-            .map(turn => `${turn.content}`)
-            .join(' | ');
+            .map((turn, index) => `Q${index + 1}: ${turn.content}`)
+            .join('\n');
 
 
         const prompt = `
-            Analyze the user's responses below, especially focusing on technical clarity and communication.
-            Transcript snippet (User Responses Only): ${userHistory}
+            You have already calculated the final score: ${finalScore}/100.
+            Write a professional, detailed performance report using the transcript below.
             
-            Final Score is pre-calculated: ${finalScore}/100. Write the final report text.
+            Transcript of User Answers:
+            ${userHistory}
 
-            Your response MUST be formatted strictly as follows, adhering to the final score:
+            Your response MUST be formatted STRICTLY as follows, adhering to the final score:
             SCORING BREAKDOWN: [Total Score: ${finalScore}/100. Write a 1-2 sentence summary of where points were earned and lost.]
             WHAT WENT WELL: [List 2-3 specific positive observations about the student's performance, e.g., communication clarity, strong start.]
             MISTAKES MADE: [List 2-3 key technical or logical errors the student made, based on the transcript.]
@@ -260,4 +261,3 @@ SELECTION PERCENTAGE: [${finalScoreSafe}%]
 app.listen(PORT, () => {
     console.log(`Server is running successfully on http://localhost:${PORT}`);
 });
-
